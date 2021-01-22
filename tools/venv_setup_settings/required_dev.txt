@@ -1,0 +1,12 @@
+pep517
+memory-profiler
+matplotlib
+import-profiler
+objectgraph
+pipreqs
+pydeps
+--force-reinstall numpy==1.19.3
+icecream
+autopep8
+pypandoc
+isort
