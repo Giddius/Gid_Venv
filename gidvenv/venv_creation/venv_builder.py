@@ -83,7 +83,7 @@ import toml
 # from natsort import natsorted
 
 # from fuzzywuzzy import fuzz, process
-from icecream import ic
+
 
 # * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
 
@@ -98,8 +98,7 @@ from icecream import ic
 #                              QApplication, QButtonGroup, QRadioButton, QFontComboBox, QStackedWidget, QListWidgetItem, QSystemTrayIcon, QTreeWidgetItem,
 #                              QDialogButtonBox, QAbstractItemView, QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator)
 
-import colorama
-from colorama import Fore, Back, Style
+
 # * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
 
 import gidlogger as glog
@@ -142,13 +141,21 @@ THIS_FILE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class GidEnvBuilder(EnvBuilder):
     git_exe = shutil.which('git')
-
+    pyproject_main_section_name = 'gidvenv'
     base_venv_settings_defaults = {"system_site_packages": False,
                                    "clear": True,
                                    "symlinks": True,
                                    "with_pip": False,
                                    "prompt": None,
                                    "upgrade_deps": False}
+
+    gidvenv_settings_defaults = {'verbose': False,
+                                 'manipulate_script': True,
+                                 'extra_install_instructions': []}
+
+    gidvenv_pyproject_section = {'gidvenv': {'base_venv_settings': base_venv_settings_defaults,
+                                             'settings': gidvenv_settings_defaults}}
+
     essentials = ['setuptools',
                   'wheel',
                   'PEP517',
@@ -163,6 +170,7 @@ class GidEnvBuilder(EnvBuilder):
         self.main_dir = self._get_main_dir_from_git() if main_dir == 'auto' else pathmaker(main_dir)
         self.pyproject_file = self._find_pyproject_file(self.main_dir) if pyproject_file is None else pathmaker(pyproject_file)
         self.pyproject_data = toml.load(self.pyproject_file)
+        self._add_missing_pyproject_data(self.pyproject_file)
 
         self.project_name = self.pyproject_data["tool"]['flit']['metadata']['module']
         self.author_name = self.pyproject_data["tool"]['flit']['metadata']['author']
@@ -183,6 +191,19 @@ class GidEnvBuilder(EnvBuilder):
 
         super().__init__(**self._handle_super_kwargs(**kwargs))
 
+    def _add_missing_pyproject_data(self, pyproject_file):
+        if self.pyproject_main_section_name not in self.pyproject_data['tool']:
+            for key, value in self.gidvenv_pyproject_section.items():
+                self.pyproject_data['tool'][key] = value
+        for key, value in self.gidvenv_pyproject_section['gidvenv'].items():
+            if key not in self.pyproject_data['tool'][self.pyproject_main_section_name]:
+                self.pyproject_data['tool'][self.pyproject_main_section_name][key] = value
+            for subkey, subvalue in value.items():
+                if subkey not in self.pyproject_data['tool'][self.pyproject_main_section_name][key]:
+                    self.pyproject_data['tool'][self.pyproject_main_section_name][key][subkey] = value
+        with open(pyproject_file, 'w') as f:
+            toml.dump(self.pyproject_data, f)
+
     @property
     def must_be_false_upgrade_setting(self):
         return False
@@ -194,13 +215,6 @@ class GidEnvBuilder(EnvBuilder):
                 base_venv_data[key] = value
         base_venv_data['upgrade'] = self.must_be_false_upgrade_setting
         return base_venv_data
-
-    @classmethod
-    def with_pyproject_settings(cls, main_dir: Union[str, Path] = 'auto'):
-        main_dir = cls._get_main_dir_from_git() if main_dir == 'auto' else pathmaker(main_dir)
-        pyproject_file = cls._find_pyproject_file(main_dir)
-        pyproject_data = toml.load(pyproject_file)
-        return cls(main_dir=main_dir, pyproject_file=pyproject_file, ** pyproject_data['tool']['gidvenv']['settings'])
 
     def _handle_stdout(self, in_data):
         print(in_data)
@@ -289,7 +303,7 @@ class GidEnvBuilder(EnvBuilder):
         command = [self.activation_script_file, '&&', 'pushd', pathmaker(self.main_dir, rev=True), '&&', 'flit', 'install', '-s', '&', 'popd']
         cmd = subprocess.run(command, shell=True, capture_output=True, text=True, check=False)
         if cmd.returncode != 0:
-            self.stderr(Back.RED + "--- ERROR with installing project itself ---")
+            self.stderr("--- ERROR with installing project itself ---")
         cmd_err = cmd.stderr
         cmd_out = cmd.stdout
         if 'error' in cmd_err.casefold():
@@ -301,7 +315,7 @@ class GidEnvBuilder(EnvBuilder):
 
         if cmd.returncode == 0:
             self.stdout(f"{'-'*100}")
-            self.stdout("- ################ " + Fore.WHITE + f"SUCCESSFULLY installed {Back.GREEN}{self.project_name} itself")
+            self.stdout("- ################ " + f"SUCCESSFULLY installed {self.project_name} itself")
 
     def _create_dev_meta_env_file(self, context: SimpleNamespace):
         self.dev_meta_env_file = pathmaker(self.tools_dir, '_project_devmeta.env')
@@ -314,17 +328,24 @@ class GidEnvBuilder(EnvBuilder):
             dev_meta_f.write(f"VENV_ACTIVATION_SCRIPT={pathmaker(context.bin_path, 'activate.bat')}")
             dev_meta_f.write("IS_DEV=true")
 
-    def create(self, env_dir=None) -> None:
-        env_dir = self.venv_dir if env_dir is None else env_dir
+    def _prepare_folder_files(self, env_dir):
         create_folder(self.tools_dir)
-        if os.path.isdir(self.venv_dir):
-            shutil.rmtree(self.venv_dir)
+        if os.path.isdir(env_dir):
+            shutil.rmtree(env_dir)
         if os.path.isdir(self.log_folder):
             shutil.rmtree(self.log_folder)
 
         create_folder(self.log_folder)
         self.venv_settings_holder = VenvSettingsHolder(self.venv_setup_settings_dir)
         self.venv_settings_holder.collect()
+
+    def initialize_only(self, env_dir=None):
+        env_dir = self.venv_dir if env_dir is None else env_dir
+        self._prepare_folder_files(env_dir)
+
+    def create(self, env_dir=None) -> None:
+        env_dir = self.venv_dir if env_dir is None else env_dir
+        self._prepare_folder_files(env_dir)
         for script_item in self.venv_settings_holder.pre_setup_scripts:
             if script_item.enabled is True:
                 self.run_script(script_item)
@@ -332,18 +353,19 @@ class GidEnvBuilder(EnvBuilder):
         return super().create(env_dir)
 
     def post_setup(self, context: SimpleNamespace) -> None:
-        self.stdout('############## creating dev_meta_env_file')
+        self.stdout('############## creating dev_meta_env_file\n')
         self._create_dev_meta_env_file(context)
-        self.stdout('############## manipulate activation_script')
+        self.stdout('############## manipulate activation_script\n')
         self._manipulate_activation_script(context)
-        self.stdout('############## updating pip')
+        self.stdout('############## updating pip\n')
         self._update_pip(context)
-        self.stdout('############## getting essentials')
+        self.stdout('############## getting essentials\n')
         self._get_essentials(context)
-        self.stdout('############## installing packages')
+        self.stdout('############## installing packages\n')
         self._install_packages_from_settings(context)
-        self.stdout('############## installing project')
+        self.stdout('############## installing project\n')
         self._install_project_itself(context)
+
 
         # region[Main_Exec]
 if __name__ == '__main__':

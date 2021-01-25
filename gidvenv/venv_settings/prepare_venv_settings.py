@@ -8,11 +8,12 @@ from gidtools.gidfiles import pathmaker, writeit, readit, create_folder, loadjso
 from gidvenv.utility.named_tuples import RequirementItem, GithubRequiredItem, PersonalRequiredItem, SetupCommandItem
 from gidvenv.venv_settings.all_pip_packages import AllPackageNames
 from pprint import pprint
-from icecream import ic
 
 
 class VenvSettingsHolder:
+
     user_data_dir = os.getenv("USER_DATA_STORAGE_DIR")
+    defaults_file_name = 'defaults.json'
     required_files_proto = {"post_setup_scripts.txt": [],
                             "pre_setup_scripts.txt": ["# pskill64,Dropbox -t -nobanner"],
                             "required_dev.txt": ["icecream", "--force-reinstall numpy==1.19.3", "isort", "memory-profiler", "matplotlib", "pydeps", "pipreqs", "invoke"],
@@ -52,6 +53,40 @@ class VenvSettingsHolder:
                                          "required_qt": {"parsing": self._standard_req_parse, "writing": self._standard_req_write},
                                          "required_test": {"parsing": self._standard_req_parse, "writing": self._standard_req_write},
                                          "required_experimental": {"parsing": self._standard_req_parse, "writing": self._standard_req_write}}
+
+    @classmethod
+    def add_default(cls, category, value):
+        path = pathmaker(cls.user_data_dir, cls.defaults_file_name)
+        if os.path.isfile(path) is False:
+            writejson(cls.required_files_proto, path)
+        data = loadjson(path)
+        if category not in data:
+            print('no such default category')
+            return
+        data[category].append(value)
+        print(f"added value '{value}' to category '{category}'")
+        writejson(data, path)
+
+    @classmethod
+    def remove_default(cls, category, value):
+        path = pathmaker(cls.user_data_dir, cls.defaults_file_name)
+        if os.path.isfile(path) is False:
+            writejson(cls.required_files_proto, path)
+        data = loadjson(path)
+        if category not in data:
+            print('no such default category')
+            return
+        to_remove_index = None
+        for index, item in enumerate(data[category]):
+            if value.casefold() in item.casefold():
+                to_remove_index = index
+                break
+        if to_remove_index is None:
+            print("no such value found")
+            return
+        removed_value = data[category].pop(to_remove_index)
+        print(f"removed value '{removed_value}' from category '{category}'")
+        writejson(data, path)
 
     def _ensure_settings_file_exist(self):
         for required_file, default_content in self.required_files.items():

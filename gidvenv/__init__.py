@@ -4,13 +4,11 @@ Custom Venv builder.
 
 __version__ = "0.1.0"
 
-import colorama
+
 import appdirs
 import os
 from importlib.metadata import metadata
 
-
-colorama.init(autoreset=True)
 
 APP_NAME = metadata(__name__).get('name')
 AUTHOR_NAME = metadata(__name__).get('author')
