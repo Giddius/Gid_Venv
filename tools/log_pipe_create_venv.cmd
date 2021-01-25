@@ -14,11 +14,11 @@ pushd %OLDHOME_FOLDER%
 rem ++++++++++++++++++++++++++++++++++++++++++++++++
 rem &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-SET PROJECT_NAME=ANTIPETROS_DISCORDBOT
+SET PROJECT_NAME=GIDVENV
 
 rem -------------------------------------------------
 
-SET PROJECT_AUTHOR=ANTISTASI_TOOLS
+SET PROJECT_AUTHOR=BROCAPROGS
 
 rem &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 rem ++++++++++++++++++++++++++++++++++++++++++++++++

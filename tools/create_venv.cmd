@@ -161,6 +161,7 @@ FOR /F "tokens=1,2 delims=," %%A in (.\venv_setup_settings\required_personal_pac
 ECHO.
 ECHO -------------------------- Installing %%B --------------^>
 ECHO.
+echo ##### pushing to %%A
 PUSHD %%A
 CALL flit install -s
 POPD
@@ -215,7 +216,7 @@ FOR /F "tokens=1 delims=," %%A in (.\venv_setup_settings\required_from_github.tx
 ECHO.
 ECHO -------------------------- Installing %%A --------------^>
 ECHO.
-CALL call pip install --upgrade --no-cache-dir git+%%A
+CALL pip install --upgrade --no-cache-dir git+%%A
 ECHO.
 )
 

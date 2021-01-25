@@ -1,4 +1,4 @@
 pytest
-pytest-cov
 pytest-venv
+pytest-cov
 pytest-click
