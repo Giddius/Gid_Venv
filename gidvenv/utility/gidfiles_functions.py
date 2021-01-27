@@ -1,7 +1,9 @@
 # region [Imports]
 
-# * Standard Library Imports -->
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
+import re
+import sys
 import json
 import pickle
 import shutil
@@ -9,13 +11,10 @@ import hashlib
 import datetime
 import configparser
 from pprint import pformat
-from contextlib import contextmanager
 from typing import Union
-import sys
-import re
-import logging
-from collections import namedtuple
-# * Gid Imports -->
+from contextlib import contextmanager
+
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
 # endregion [Imports]
@@ -23,9 +22,7 @@ import gidlogger as glog
 
 # region [Logging]
 
-log = logging.getLogger('gidfiles')
-
-glog.import_notification(log, __name__)
+log = glog.aux_logger(os.getenv('APP_NAME'))
 
 # endregion [Logging]
 
@@ -64,13 +61,16 @@ def writejson(in_object, in_file, sort_keys=True, indent=4):
 
 def hash_to_solidcfg(in_file, in_name=None, in_config_loc='default'):
     _cfg = configparser.ConfigParser()
-    _cfg_loc = pathmaker('cwd', 'config', 'solid_config.ini') if in_config_loc == 'default' else in_config_loc
+    _cfg_loc = pathmaker(
+        'cwd', 'config', 'solid_config.ini') if in_config_loc == 'default' else in_config_loc
     _bin_file = readbin(in_file)
-    _name = splitoff(in_file)[1].replace('.', '') if in_name is None else in_name
+    _name = splitoff(in_file)[1].replace(
+        '.', '') if in_name is None else in_name
     _cfg.read(_cfg_loc)
     _hash = hashlib.md5(_bin_file).hexdigest()
     if _cfg.has_section('hashes') is False:
-        log.info("section ['hashes'] does not exist in solid_config.ini, creating it now!")
+        log.info(
+            "section ['hashes'] does not exist in solid_config.ini, creating it now!")
         _cfg.add_section('hashes')
         log.info("section ['hashes'] added to solid_config.ini")
     _cfg.set('hashes', _name, _hash)
@@ -80,14 +80,17 @@ def hash_to_solidcfg(in_file, in_name=None, in_config_loc='default'):
         log.debug("saved new solid_config.ini at '{_cfg_loc}'")
     _cfg.read(_cfg_loc)
     if _cfg.get('hashes', _name) != _hash:
-        raise configparser.Error("recently saved hash does not match the file hash")
+        raise configparser.Error(
+            "recently saved hash does not match the file hash")
 
 
 def ishash_same(in_file, in_name=None, in_config_loc='default'):
     _cfg = configparser.ConfigParser()
-    _cfg_loc = pathmaker('cwd', 'config', 'solid_config.ini') if in_config_loc == 'default' else in_config_loc
+    _cfg_loc = pathmaker(
+        'cwd', 'config', 'solid_config.ini') if in_config_loc == 'default' else in_config_loc
     _bin_file = readbin(in_file)
-    _name = splitoff(in_file)[1].replace('.', '') if in_name is None else in_name
+    _name = splitoff(in_file)[1].replace(
+        '.', '') if in_name is None else in_name
     _cfg.read(_cfg_loc)
     _hash = hashlib.md5(_bin_file).hexdigest()
     if _cfg.has_section('hashes') is True:
@@ -102,7 +105,8 @@ def ishash_same(in_file, in_name=None, in_config_loc='default'):
             _out = False
             log.info('missing option')
     else:
-        log.critical("section ['hashes'] is missing in solid_config.ini, it is absolutely needed")
+        log.critical(
+            "section ['hashes'] is missing in solid_config.ini, it is absolutely needed")
         raise configparser.Error("section ['hashes'] does not exist!!")
 
     return _out
@@ -183,7 +187,8 @@ def linereadit(in_file, in_encoding='utf-8', in_errors='strict'):
 def from_dict_to_file(in_out_file, in_dict_name, in_dict):
     appendwriteit(in_out_file, '\n\n')
     _dict_string = in_dict_name + ' = {' + pformat(in_dict) + '\n}'
-    _dict_string = _dict_string.replace('{{', '{\n').replace('}}', '}').replace('}\n}', '\n}')
+    _dict_string = _dict_string.replace(
+        '{{', '{\n').replace('}}', '}').replace('}\n}', '\n}')
     appendwriteit(in_out_file, _dict_string)
 
 
@@ -313,7 +318,8 @@ def work_in(in_dir):
     os.chdir(in_dir)
     log.debug(f"starting to work in directory [{in_dir}]")
     yield
-    log.debug(f"stopped to work in directory [{in_dir}] and returned to directory [{prev_cwd}]")
+    log.debug(
+        f"stopped to work in directory [{in_dir}] and returned to directory [{prev_cwd}]")
     os.chdir(prev_cwd)
 
 
@@ -338,7 +344,8 @@ def path_part_remove(in_file):
     _useless = _path.pop(-1)
     _first = _path.pop(0) + '/'
     _out = pathmaker(_first, *_path)
-    log.debug(f"path segment [{_useless}] was removed from path [{_file}] to get [{_out}]")
+    log.debug(
+        f"path segment [{_useless}] was removed from path [{_file}] to get [{_out}]")
     return _out
 
 
@@ -442,7 +449,8 @@ def number_rename(in_file_name, in_round=1):
     """
     _temp_path = in_file_name
     _temp_path = _temp_path.split('.')
-    log.debug(f" Parts of rename: [0] = {_temp_path[0]}, [1] = {_temp_path[1]}")
+    log.debug(
+        f" Parts of rename: [0] = {_temp_path[0]}, [1] = {_temp_path[1]}")
     _output = _temp_path[0] + str(in_round) + '.' + _temp_path[1]
     log.debug(f"Setting name to {_output}")
     _new_round = int(in_round) + 1
@@ -467,11 +475,15 @@ def cascade_rename(in_file_name, in_folder, in_max_files=3):
                 _temp_file_dict[str(0)] = pathmaker(in_folder, files)
     if file_index + 1 <= in_max_files:
         if file_index == 1:
-            writeit(pathmaker(in_folder, _name + str(file_index) + '.' + _ext), ' ')
-            _temp_file_dict[str(file_index)] = pathmaker(in_folder, _name + str(file_index) + '.' + _ext)
+            writeit(pathmaker(in_folder, _name +
+                              str(file_index) + '.' + _ext), ' ')
+            _temp_file_dict[str(file_index)] = pathmaker(
+                in_folder, _name + str(file_index) + '.' + _ext)
         else:
-            writeit(pathmaker(in_folder, _name + str(file_index + 1) + '.' + _ext), ' ')
-            _temp_file_dict[str(file_index + 1)] = pathmaker(in_folder, _name + str(file_index + 1) + '.' + _ext)
+            writeit(pathmaker(in_folder, _name +
+                              str(file_index + 1) + '.' + _ext), ' ')
+            _temp_file_dict[str(file_index + 1)] = pathmaker(in_folder,
+                                                             _name + str(file_index + 1) + '.' + _ext)
     for i in range(len(_temp_file_dict) - 1):
         if i != 0:
             shutil.copy(_temp_file_dict[str(i)], _temp_file_dict[str(i - 1)])
@@ -487,7 +499,8 @@ def _exist_handle(in_path, in_round, original_path):
     if os.path.exists(in_path) is True:
         log.debug(f"{in_path} already exists")
         _new_path = number_rename(original_path, in_round)
-        log.debug(f" variables for rename round {in_round} are: original_path = {original_path}, in_round = {in_round}")
+        log.debug(
+            f" variables for rename round {in_round} are: original_path = {original_path}, in_round = {in_round}")
     else:
         _new_path = in_path
         log.debug(
@@ -535,7 +548,8 @@ def timenamemaker(in_full_path):
     _new_file_name = _file_tup[0] + _time + _file_tup[1]
     _path = splitoff(in_full_path)[0]
     _out = pathmaker(_path, _new_file_name)
-    log.debug(f"created file name [{_out}] from original name [{in_full_path}]")
+    log.debug(
+        f"created file name [{_out}] from original name [{in_full_path}]")
     return _out
 
 
@@ -604,19 +618,25 @@ def file_name_modifier(in_path, in_string, pos='prefix', new_ext=None, seperator
     """
     _forbiden_chars = ['<', '>', ':', '"', '/', '\\', '|', '?', '*']
     if new_ext is not None and any(chars in new_ext for chars in _forbiden_chars):
-        raise Exception(f"You can't use the following symbols in file names {str(_forbiden_chars)}")
+        raise Exception(
+            f"You can't use the following symbols in file names {str(_forbiden_chars)}")
     if seperator is not None and any(chars in seperator for chars in _forbiden_chars):
-        raise Exception(f"You can't use the following symbols in file names {str(_forbiden_chars)}")
+        raise Exception(
+            f"You can't use the following symbols in file names {str(_forbiden_chars)}")
     if any(chars in in_string for chars in _forbiden_chars):
-        raise Exception(f"You can't use the following symbols in file names {str(_forbiden_chars)}")
+        raise Exception(
+            f"You can't use the following symbols in file names {str(_forbiden_chars)}")
     _path, _file = splitoff(pathmaker(in_path))
     if new_ext is not None:
-        _file = _file.rsplit('.', 1)[0] + new_ext if '.' in new_ext else _file.rsplit('.', 1)[0] + '.' + new_ext
+        _file = _file.rsplit('.', 1)[
+            0] + new_ext if '.' in new_ext else _file.rsplit('.', 1)[0] + '.' + new_ext
     _file, _ext = _file.rsplit('.', 1)
     if seperator is None:
-        _outfile = in_string + _file + '.' + _ext if pos == 'prefix' else _file + in_string + '.' + _ext
+        _outfile = in_string + _file + '.' + \
+            _ext if pos == 'prefix' else _file + in_string + '.' + _ext
     else:
-        _outfile = in_string + seperator + _file + '.' + _ext if pos == 'prefix' else _file + seperator + in_string + '.' + _ext
+        _outfile = in_string + seperator + _file + '.' + \
+            _ext if pos == 'prefix' else _file + seperator + in_string + '.' + _ext
     _out = pathmaker(_path, _outfile)
     log.debug(f"created file name [{_out}] from original name [{in_path}]")
     return _out
@@ -720,13 +740,15 @@ def limit_amount_of_files(in_basename, in_directory, in_amount_max):
     in_amount_max : int
         the max amount of files allowed
     """
-    log.debug(f"checking amount of files with name [{in_basename}] in [{in_directory}], if more than [{in_amount_max}]")
+    log.debug(
+        f"checking amount of files with name [{in_basename}] in [{in_directory}], if more than [{in_amount_max}]")
     _existing_file_list = []
     for files in os.listdir(pathmaker(in_directory)):
         if in_basename in files:
             _existing_file_list.append(pathmaker(in_directory, files))
     if len(_existing_file_list) > in_amount_max:
-        log.debug(f"files are exceding max amount by [{len(_existing_file_list)-in_amount_max}]")
+        log.debug(
+            f"files are exceding max amount by [{len(_existing_file_list)-in_amount_max}]")
         _existing_file_list.sort(key=os.path.getmtime)
         for index, files in enumerate(_existing_file_list):
             _rename_index = index - 1
@@ -737,7 +759,8 @@ def limit_amount_of_files(in_basename, in_directory, in_amount_max):
                 break
             else:
                 os.rename(files, _existing_file_list[_rename_index])
-                log.debug(f"renaming file [{files}] to [{_existing_file_list[_rename_index]}]")
+                log.debug(
+                    f"renaming file [{files}] to [{_existing_file_list[_rename_index]}]")
 
 
 def create_folder(in_path):
@@ -779,7 +802,8 @@ def to_attr_name(in_name):
             for amount in reversed(range(1, 10)):
                 if to_replace * amount in attr_name:
 
-                    attr_name = attr_name.lstrip(to_replace * amount).rstrip(to_replace * amount).replace(to_replace * amount, replacement)
+                    attr_name = attr_name.lstrip(
+                        to_replace * amount).rstrip(to_replace * amount).replace(to_replace * amount, replacement)
     return attr_name.casefold()
 
 
@@ -800,7 +824,8 @@ def get_ext(in_file):
 
 
 def remove_extension(in_file, keep_path=False):
-    file_name = os.path.basename(in_file) if keep_path is False else pathmaker(in_file)
+    file_name = os.path.basename(
+        in_file) if keep_path is False else pathmaker(in_file)
     return os.path.splitext(file_name)[0]
 
 

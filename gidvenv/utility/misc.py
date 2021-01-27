@@ -1,4 +1,10 @@
+
+# region [Imports]
+
+# * Third Party Imports --------------------------------------------------------------------------------->
 import requests
+
+# endregion [Imports]
 
 
 def download_file(url, output_file):

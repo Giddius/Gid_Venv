@@ -1,11 +1,33 @@
+
+# region [Imports]
+
+# * Standard Library Imports ---------------------------------------------------------------------------->
+import os
+import sys
+import logging
+
+# * Third Party Imports --------------------------------------------------------------------------------->
+import click
+
+# * Gid Imports ----------------------------------------------------------------------------------------->
+import gidlogger as glog
+
+# * Local Imports --------------------------------------------------------------------------------------->
+from gidvenv.utility.gidfiles_functions import pathmaker
 from gidvenv.venv_creation.venv_builder import GidEnvBuilder
 from gidvenv.venv_settings.prepare_venv_settings import VenvSettingsHolder
-import sys
-import os
-from icecream import ic
-from gidvenv.utility.output_proxies import SpecialOutput
-import click
-from gidtools.gidfiles import pathmaker
+
+# endregion [Imports]
+
+
+# region [Logging]
+
+log = glog.aux_logger(os.getenv('APP_NAME'))
+
+
+# endregion[Logging]
+
+log.info('starting Gidvenv tool')
 
 
 @click.group()
@@ -21,8 +43,12 @@ def cli():
 @click.option('--manipulate-script/--dont-manipulate-script', '-m/-dm', default=True)
 @click.option('-ei', '--extra-install-instructions', multiple=True)
 def create(venv_folder_name, main_dir, pyproject_file, verbose, manipulate_script, extra_install_instructions):
-    builder = GidEnvBuilder(main_dir=main_dir, pyproject_file=pyproject_file, verbose=verbose, manipulate_script=manipulate_script, extra_install_instructions=list(extra_install_instructions))
-    venv_path = pathmaker(builder.main_dir, venv_folder_name) if venv_folder_name is not None else None
+
+    builder = GidEnvBuilder(main_dir=main_dir, pyproject_file=pyproject_file, verbose=verbose,
+                            manipulate_script=manipulate_script, extra_install_instructions=list(extra_install_instructions))
+    log.info("Starting venv creation in '%s'", builder.main_dir)
+    venv_path = pathmaker(
+        builder.main_dir, venv_folder_name) if venv_folder_name is not None else None
     builder.create(env_dir=venv_path)
 
 

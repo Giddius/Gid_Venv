@@ -1,10 +1,19 @@
-from collections import namedtuple
+
+# region [Imports]
+
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import subprocess
-from gidvenv.utility.gidfiles_functions import pathmaker
 from shutil import which
+from collections import namedtuple
+
+# * Local Imports --------------------------------------------------------------------------------------->
+from gidvenv.utility.gidfiles_functions import pathmaker
+
+# endregion [Imports]
 
 
-SetupCommandItem = namedtuple("ScriptItem", ['executable', 'args', 'enabled', 'check'], defaults=(True,))
+SetupCommandItem = namedtuple(
+    "ScriptItem", ['executable', 'args', 'enabled', 'check'], defaults=(True,))
 
 
 def get_pip_exe():
@@ -26,17 +35,22 @@ class RequirementItem(namedtuple("RequirementItem", ['name', 'version_operator',
                         install_instructions.append(extra_instruction)
             if verbose:
                 stdout(f"#### Installing {self.name.upper()} ####\n")
-            command = [activation_script, '&&', "pip", "install"] + install_instructions + [f"{self.name}{self.version_operator}{self.version}"]
-            cmd = subprocess.run(command, capture_output=True, check=False, shell=True, text=True)
+            command = [activation_script, '&&', "pip", "install"] + \
+                install_instructions + \
+                [f"{self.name}{self.version_operator}{self.version}"]
+            cmd = subprocess.run(command, capture_output=True,
+                                 check=False, shell=True, text=True)
             if cmd.returncode != 0 or cmd.stderr != '':
-                stderr(f"--- ERROR with installing pypi package {self.name.upper()} ---")
+                stderr(
+                    f"--- ERROR with installing pypi package {self.name.upper()} ---")
             if verbose:
                 stdout(cmd.stdout)
             stderr(cmd.stderr)
 
             if cmd.returncode == 0:
                 stdout(f"{'-'*100}")
-                stdout("- ################ " + f"SUCCESSFULLY installed {self.name.upper()} ")
+                stdout("- ################ " +
+                       f"SUCCESSFULLY installed {self.name.upper()} ")
 
 
 class PersonalRequiredItem(namedtuple("PersonalRequiredItem", ['name', 'path', 'enabled'])):
@@ -45,11 +59,15 @@ class PersonalRequiredItem(namedtuple("PersonalRequiredItem", ['name', 'path', '
         if self.enabled:
             path = pathmaker(self.path, rev=True)
             if verbose:
-                stdout(f"#### Installing flit dev {self.name.upper()} from {path} ####\n")
-            command = [activation_script, '&&', 'pushd', path, '&&', "flit", 'install', '-s', '&', "popd"]
-            cmd = subprocess.run(command, capture_output=True, check=False, shell=True, text=True)
+                stdout(
+                    f"#### Installing flit dev {self.name.upper()} from {path} ####\n")
+            command = [activation_script, '&&', 'pushd', path,
+                       '&&', "flit", 'install', '-s', '&', "popd"]
+            cmd = subprocess.run(command, capture_output=True,
+                                 check=False, shell=True, text=True)
             if cmd.returncode != 0:
-                stderr(f"--- ERROR with installing flit dev package {self.name.upper()} ---")
+                stderr(
+                    f"--- ERROR with installing flit dev package {self.name.upper()} ---")
             cmd_out = cmd.stdout
 
             cmd_err = cmd.stderr
@@ -63,7 +81,8 @@ class PersonalRequiredItem(namedtuple("PersonalRequiredItem", ['name', 'path', '
 
             if cmd.returncode == 0:
                 stdout(f"{'-'*100}")
-                stdout("- ################ " + f"SUCCESSFULLY installed {self.name.upper()} ")
+                stdout("- ################ " +
+                       f"SUCCESSFULLY installed {self.name.upper()} ")
 
 
 class GithubRequiredItem(namedtuple("GithubRequiredItem", ['name', 'url', 'enabled'])):
@@ -71,15 +90,19 @@ class GithubRequiredItem(namedtuple("GithubRequiredItem", ['name', 'url', 'enabl
     def install(self, activation_script, stdout, stderr, extra_install_instructions: list = None, verbose=False):
         if self.enabled:
             if verbose:
-                stdout(f"#### Installing from Github {self.name.upper()} ####\n")
+                stdout(
+                    f"#### Installing from Github {self.name.upper()} ####\n")
             url = self.url
             if not url.startswith('git+'):
                 url = 'git+' + url
             install_instructions = extra_install_instructions if extra_install_instructions is not None else []
-            command = [activation_script, '&&', "pip", "install", '--no-cache-dir'] + install_instructions + [url]
-            cmd = subprocess.run(command, capture_output=True, check=False, shell=True, text=True)
+            command = [activation_script, '&&', "pip", "install",
+                       '--no-cache-dir'] + install_instructions + [url]
+            cmd = subprocess.run(command, capture_output=True,
+                                 check=False, shell=True, text=True)
             if cmd.returncode != 0:
-                stderr(f"--- ERROR with installing Github package {self.name.upper()} ---")
+                stderr(
+                    f"--- ERROR with installing Github package {self.name.upper()} ---")
             cmd_out = cmd.stdout
 
             cmd_err = cmd.stderr
@@ -93,4 +116,5 @@ class GithubRequiredItem(namedtuple("GithubRequiredItem", ['name', 'url', 'enabl
 
             if cmd.returncode == 0:
                 stdout(f"{'-'*100}")
-                stdout("- ################ " + f"SUCCESSFULLY installed {self.name.upper()} ")
+                stdout("- ################ " +
+                       f"SUCCESSFULLY installed {self.name.upper()} ")

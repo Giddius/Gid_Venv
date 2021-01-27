@@ -6,114 +6,32 @@
 
 # region [Imports]
 
-# * Standard Library Imports ------------------------------------------------------------------------------------------------------------------------------------>
-
-import gc
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import re
 import sys
-import json
-import lzma
-import time
-import queue
-import base64
-import pickle
-import random
-import shelve
 import shutil
-import asyncio
-import logging
-import sqlite3
-import platform
-import importlib
 import subprocess
-import unicodedata
-
-from io import BytesIO
-from abc import ABC, abstractmethod
-from copy import copy, deepcopy
-from enum import Enum, Flag, auto
-from time import time, sleep
-from pprint import pprint, pformat
-from string import Formatter, digits, printable, whitespace, punctuation, ascii_letters, ascii_lowercase, ascii_uppercase
-from timeit import Timer
-from typing import Union, Callable, Iterable
-from inspect import stack, getdoc, getmodule, getsource, getmembers, getmodulename, getsourcefile, getfullargspec, getsourcelines
-from zipfile import ZipFile
-from datetime import tzinfo, datetime, timezone, timedelta
-from tempfile import TemporaryDirectory
-from textwrap import TextWrapper, fill, wrap, dedent, indent, shorten
-from functools import wraps, partial, lru_cache, singledispatch, total_ordering
-from importlib import import_module, invalidate_caches
-from contextlib import contextmanager, redirect_stdout, redirect_stderr
-from statistics import mean, mode, stdev, median, variance, pvariance, harmonic_mean, median_grouped
-from collections import Counter, ChainMap, deque, namedtuple, defaultdict
-from urllib.parse import urlparse
-from importlib.util import find_spec, module_from_spec, spec_from_file_location
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from importlib.machinery import SourceFileLoader
 from venv import EnvBuilder
-from typing import Optional
-from pathlib import Path
 from types import SimpleNamespace
+from typing import Union
+from pathlib import Path
 
-# * Third Party Imports ----------------------------------------------------------------------------------------------------------------------------------------->
-
-
+# * Third Party Imports --------------------------------------------------------------------------------->
 import toml
-# import discord
 
-# import requests
-
-# import pyperclip
-
-# import matplotlib.pyplot as plt
-
-# from bs4 import BeautifulSoup
-
-# from dotenv import load_dotenv
-
-# from discord import Embed, File
-
-# from discord.ext import commands, tasks
-
-# from github import Github, GithubException
-
-
-# from natsort import natsorted
-
-# from fuzzywuzzy import fuzz, process
-
-
-# * PyQt5 Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-
-# from PyQt5.QtGui import QFont, QIcon, QBrush, QColor, QCursor, QPixmap, QStandardItem, QRegExpValidator
-
-# from PyQt5.QtCore import (Qt, QRect, QSize, QObject, QRegExp, QThread, QMetaObject, QCoreApplication,
-#                           QFileSystemWatcher, QPropertyAnimation, QAbstractTableModel, pyqtSlot, pyqtSignal)
-
-# from PyQt5.QtWidgets import (QMenu, QFrame, QLabel, QAction, QDialog, QLayout, QWidget, QWizard, QMenuBar, QSpinBox, QCheckBox, QComboBox, QGroupBox, QLineEdit,
-#                              QListView, QCompleter, QStatusBar, QTableView, QTabWidget, QDockWidget, QFileDialog, QFormLayout, QGridLayout, QHBoxLayout,
-#                              QHeaderView, QListWidget, QMainWindow, QMessageBox, QPushButton, QSizePolicy, QSpacerItem, QToolButton, QVBoxLayout, QWizardPage,
-#                              QApplication, QButtonGroup, QRadioButton, QFontComboBox, QStackedWidget, QListWidgetItem, QSystemTrayIcon, QTreeWidgetItem,
-#                              QDialogButtonBox, QAbstractItemView, QCommandLinkButton, QAbstractScrollArea, QGraphicsOpacityEffect, QTreeWidgetItemIterator)
-
-
-# * Gid Imports ------------------------------------------------------------------------------------------------------------------------------------------------->
-
+# * Gid Imports ----------------------------------------------------------------------------------------->
 import gidlogger as glog
 
-from gidvenv.utility.gidfiles_functions import (readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
-from gidvenv.utility.file_system_walk import filesystem_walker, filesystem_walker_files, filesystem_walker_folders
-
-
-# * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
-from gidvenv.venv_settings.prepare_venv_settings import VenvSettingsHolder
-from gidvenv.utility.script_data import LOAD_ENV_SNIPPET
+# * Local Imports --------------------------------------------------------------------------------------->
 from gidvenv.utility.misc import download_file
+from gidvenv.utility.script_data import LOAD_ENV_SNIPPET
 from gidvenv.utility.named_tuples import SetupCommandItem
-# endregion[Imports]
+from gidvenv.utility.file_system_walk import filesystem_walker_files
+from gidvenv.utility.gidfiles_functions import readit, writeit, pathmaker, create_folder
+from gidvenv.venv_settings.prepare_venv_settings import VenvSettingsHolder
+
+# endregion [Imports]
+
 
 # region [TODO]
 
@@ -127,8 +45,7 @@ from gidvenv.utility.named_tuples import SetupCommandItem
 
 # region [Logging]
 
-log = glog.aux_logger(__name__)
-log.info(glog.imported(__name__))
+log = glog.aux_logger(os.getenv('APP_NAME'))
 
 # endregion[Logging]
 
@@ -168,8 +85,10 @@ class GidEnvBuilder(EnvBuilder):
         self.verbose = verbose
         self.manipulate_script = manipulate_script
         self.extra_install_instructions = extra_install_instructions
-        self.main_dir = self._get_main_dir_from_git() if main_dir == 'auto' else pathmaker(main_dir)
-        self.pyproject_file = self._find_pyproject_file(self.main_dir) if pyproject_file is None else pathmaker(pyproject_file)
+        self.main_dir = self._get_main_dir_from_git(
+        ) if main_dir == 'auto' else pathmaker(main_dir)
+        self.pyproject_file = self._find_pyproject_file(
+            self.main_dir) if pyproject_file is None else pathmaker(pyproject_file)
         self.pyproject_data = toml.load(self.pyproject_file)
         self._add_missing_pyproject_data(self.pyproject_file)
 
@@ -183,7 +102,8 @@ class GidEnvBuilder(EnvBuilder):
         self.log_folder = pathmaker(self.tools_dir, 'create_venv_logs')
         self.error_log_file = pathmaker(self.log_folder, 'create_venv.errors')
         self.std_log_file = pathmaker(self.log_folder, 'create_venv.log')
-        self.venv_setup_settings_dir = pathmaker(self.tools_dir, 'venv_setup_settings')
+        self.venv_setup_settings_dir = pathmaker(
+            self.tools_dir, 'venv_setup_settings')
 
         self.venv_settings_holder = None
         self.dev_meta_env_file = None
@@ -210,7 +130,8 @@ class GidEnvBuilder(EnvBuilder):
         return False
 
     def _handle_super_kwargs(self, **kwargs):
-        base_venv_data = self.pyproject_data['tool'].get('gidvenv', {}).get('base_venv_settings', self.base_venv_settings_defaults)
+        base_venv_data = self.pyproject_data['tool'].get('gidvenv', {}).get(
+            'base_venv_settings', self.base_venv_settings_defaults)
         for key, value in kwargs.items():
             if key in self.base_venv_settings_defaults:
                 base_venv_data[key] = value
@@ -229,7 +150,8 @@ class GidEnvBuilder(EnvBuilder):
                 f.write(in_data + '\n')
 
     def _get_main_dir_from_git(self):
-        cmd = subprocess.run([self.git_exe, "rev-parse", "--show-toplevel"], capture_output=True, check=True, cwd=os.getcwd(), text=True)
+        cmd = subprocess.run([self.git_exe, "rev-parse", "--show-toplevel"],
+                             capture_output=True, check=True, cwd=os.getcwd(), text=True)
         main_dir = pathmaker(cmd.stdout).rstrip('\n')
         if os.path.isdir(main_dir) is False:
             raise FileNotFoundError('Unable to locate main_dir')
@@ -249,58 +171,73 @@ class GidEnvBuilder(EnvBuilder):
             if self.activation_script_file is None:
                 raise RuntimeError('activation script is None')
             command = [self.activation_script_file, '&&'] + command
-        cmd = subprocess.run(command, check=False, capture_output=True, shell=True, text=True)
+        cmd = subprocess.run(command, check=False,
+                             capture_output=True, shell=True, text=True)
         self.stdout(cmd.stdout)
         self.stderr(cmd.stderr)
         if cmd.returncode != 0:
             if script_item.check is True:
-                raise subprocess.CalledProcessError(cmd.returncode, cmd, cmd.stdout, cmd.stderr)
-            self.stderr(f"--- ERROR with script '{script_item.executable}' ---")
+                raise subprocess.CalledProcessError(
+                    cmd.returncode, cmd, cmd.stdout, cmd.stderr)
+            self.stderr(
+                f"--- ERROR with script '{script_item.executable}' ---")
 
     def _update_pip(self, context: SimpleNamespace) -> None:
         temp_folder = pathmaker(self.main_dir, 'temp')
         create_folder(temp_folder)
         get_pip_file = pathmaker(temp_folder, 'get-pip.py')
-        download_file("https://bootstrap.pypa.io/get-pip.py", output_file=get_pip_file)
+        download_file("https://bootstrap.pypa.io/get-pip.py",
+                      output_file=get_pip_file)
         if 'setuptools' in sys.modules:
             content = readit(get_pip_file)
-            content = content.replace('import os.path', 'import setuptools\nimport os.path')
+            content = content.replace(
+                'import os.path', 'import setuptools\nimport os.path')
             writeit(get_pip_file, content)
-        command_item = SetupCommandItem(context.env_exe, [get_pip_file], True, True)
+        command_item = SetupCommandItem(
+            context.env_exe, [get_pip_file], True, True)
         self.run_script(command_item)
         os.remove(get_pip_file)
 
     def _get_essentials(self, context: SimpleNamespace):
         for essential_name in self.essentials:
-            script_item = SetupCommandItem('pip', ['install', essential_name, '--force-reinstall', '--no-cache-dir', '--upgrade'], True, False)
+            script_item = SetupCommandItem('pip', [
+                                           'install', essential_name, '--force-reinstall', '--no-cache-dir', '--upgrade'], True, False)
             self.run_script(script_item, in_venv=True)
 
     def _manipulate_activation_script(self, context: SimpleNamespace):
         bat_activation_file = pathmaker(context.bin_path, 'activate.bat')
         if self.manipulate_script is True:
             content = readit(bat_activation_file)
-            content = content.replace('@echo off', LOAD_ENV_SNIPPET.replace('$!$DEV_META_ENV_FILE_PATH$!$', pathmaker(self.dev_meta_env_file, rev=True)))
+            content = content.replace('@echo off', LOAD_ENV_SNIPPET.replace(
+                '$!$DEV_META_ENV_FILE_PATH$!$', pathmaker(self.dev_meta_env_file, rev=True)))
             writeit(bat_activation_file, content)
         self.activation_script_file = bat_activation_file
 
     def _install_packages_from_settings(self, context: SimpleNamespace):
         install_order = [(self.venv_settings_holder.required_personal_packages, "required personal"),
                          (self.venv_settings_holder.required_misc, "required misc"),
-                         (self.venv_settings_holder.required_experimental, "required experimental"),
+                         (self.venv_settings_holder.required_experimental,
+                          "required experimental"),
                          (self.venv_settings_holder.required_qt, "required qt"),
-                         (self.venv_settings_holder.required_from_github, "required from github"),
+                         (self.venv_settings_holder.required_from_github,
+                          "required from github"),
                          (self.venv_settings_holder.required_test, "required test"),
                          (self.venv_settings_holder.required_dev, "required dev")]
         for container in install_order:
-            self.stdout(f'\n\n========================================== Installing {container[1].title()} Packages ==========================================\n')
+            self.stdout(
+                f'\n\n========================================== Installing {container[1].title()} Packages ==========================================\n')
             for item in container[0]:
-                item.install(self.activation_script_file, self.stdout, self.stderr, self.extra_install_instructions, self.verbose)
+                item.install(self.activation_script_file, self.stdout,
+                             self.stderr, self.extra_install_instructions, self.verbose)
             self.stdout(f"{'-'*100}")
 
     def _install_project_itself(self, context: SimpleNamespace):
-        self.stdout("\n############ INSTALL THE PROJECT ITSELF AS -DEV PACKAGE ############\n")
-        command = [self.activation_script_file, '&&', 'pushd', pathmaker(self.main_dir, rev=True), '&&', 'flit', 'install', '-s', '&', 'popd']
-        cmd = subprocess.run(command, shell=True, capture_output=True, text=True, check=False)
+        self.stdout(
+            "\n############ INSTALL THE PROJECT ITSELF AS -DEV PACKAGE ############\n")
+        command = [self.activation_script_file, '&&', 'pushd', pathmaker(
+            self.main_dir, rev=True), '&&', 'flit', 'install', '-s', '&', 'popd']
+        cmd = subprocess.run(command, shell=True,
+                             capture_output=True, text=True, check=False)
         if cmd.returncode != 0:
             self.stderr("--- ERROR with installing project itself ---")
         cmd_err = cmd.stderr
@@ -314,17 +251,23 @@ class GidEnvBuilder(EnvBuilder):
 
         if cmd.returncode == 0:
             self.stdout(f"{'-'*100}")
-            self.stdout("- ################ " + f"SUCCESSFULLY installed {self.project_name} itself")
+            self.stdout("- ################ " +
+                        f"SUCCESSFULLY installed {self.project_name} itself")
 
     def _create_dev_meta_env_file(self, context: SimpleNamespace):
-        self.dev_meta_env_file = pathmaker(self.tools_dir, '_project_devmeta.env')
+        self.dev_meta_env_file = pathmaker(
+            self.tools_dir, '_project_devmeta.env')
         with open(self.dev_meta_env_file, 'w') as dev_meta_f:
-            dev_meta_f.write(f"WORKSPACEDIR={pathmaker(self.main_dir,rev=True)}\n")
-            dev_meta_f.write(f"TOPLEVELMODULE={pathmaker(self.main_dir, self.project_name,rev=True)}\n")
-            dev_meta_f.write(f"MAIN_SCRIPT_FILE={pathmaker(self.main_dir, self.project_name, '__main__.py',rev=True)}\n")
+            dev_meta_f.write(
+                f"WORKSPACEDIR={pathmaker(self.main_dir,rev=True)}\n")
+            dev_meta_f.write(
+                f"TOPLEVELMODULE={pathmaker(self.main_dir, self.project_name,rev=True)}\n")
+            dev_meta_f.write(
+                f"MAIN_SCRIPT_FILE={pathmaker(self.main_dir, self.project_name, '__main__.py',rev=True)}\n")
             dev_meta_f.write(f"PROJECT_NAME={self.project_name}\n")
             dev_meta_f.write(f"PROJECT_AUTHOR={self.author_name}\n")
-            dev_meta_f.write(f"VENV_ACTIVATION_SCRIPT={pathmaker(context.bin_path, 'activate.bat')}")
+            dev_meta_f.write(
+                f"VENV_ACTIVATION_SCRIPT={pathmaker(context.bin_path, 'activate.bat')}")
             dev_meta_f.write("IS_DEV=true")
 
     def _prepare_folder_files(self, env_dir):
@@ -335,7 +278,8 @@ class GidEnvBuilder(EnvBuilder):
             shutil.rmtree(self.log_folder)
 
         create_folder(self.log_folder)
-        self.venv_settings_holder = VenvSettingsHolder(self.venv_setup_settings_dir)
+        self.venv_settings_holder = VenvSettingsHolder(
+            self.venv_setup_settings_dir)
         self.venv_settings_holder.collect()
 
     def initialize_only(self, env_dir=None):
@@ -347,7 +291,8 @@ class GidEnvBuilder(EnvBuilder):
         env_dir = self.venv_dir if env_dir is None else env_dir
         self._prepare_folder_files(env_dir)
         if self.pyclean_before is True:
-            self.run_script(SetupCommandItem(shutil.which('pyclean'), [pathmaker(self.main_dir, rev=True)], True, False))
+            self.run_script(SetupCommandItem(shutil.which('pyclean'), [
+                            pathmaker(self.main_dir, rev=True)], True, False))
         for script_item in self.venv_settings_holder.pre_setup_scripts:
             if script_item.enabled is True:
                 self.run_script(script_item)
@@ -369,7 +314,7 @@ class GidEnvBuilder(EnvBuilder):
         self._install_project_itself(context)
 
 
-        # region[Main_Exec]
+# region[Main_Exec]
 if __name__ == '__main__':
     pass
 # endregion[Main_Exec]

@@ -2,16 +2,27 @@
 
 # region [Imports]
 
+# * Standard Library Imports ---------------------------------------------------------------------------->
 import os
-import sys
 import shutil
-from pathlib import Path
-from gidvenv.utility.gidfiles_functions import pathmaker, writeit, readit, create_folder, loadjson, writejson
-from gidvenv.utility.named_tuples import RequirementItem, GithubRequiredItem, PersonalRequiredItem, SetupCommandItem
-from gidvenv.venv_settings.all_pip_packages import AllPackageNames
-from pprint import pprint
 
-# endregion[Imports]
+# * Gid Imports ----------------------------------------------------------------------------------------->
+import gidlogger as glog
+
+# * Local Imports --------------------------------------------------------------------------------------->
+from gidvenv.utility.named_tuples import RequirementItem, SetupCommandItem, GithubRequiredItem, PersonalRequiredItem
+from gidvenv.utility.gidfiles_functions import readit, writeit, loadjson, pathmaker, writejson, create_folder
+from gidvenv.venv_settings.all_pip_packages import AllPackageNames
+
+# endregion [Imports]
+
+
+# region [Logging]
+
+log = glog.aux_logger(os.getenv('APP_NAME'))
+
+
+# endregion[Logging]
 
 
 class VenvSettingsHolder:
@@ -136,7 +147,8 @@ class VenvSettingsHolder:
                         line = line.removeprefix('--check').strip()
                         check = True
                     executable, args = line.split(',')
-                    getattr(self, category).append(SetupCommandItem(executable=self._validate_executable(executable), args=self._split_convert_args(args), enabled=enabled, check=check))
+                    getattr(self, category).append(SetupCommandItem(executable=self._validate_executable(
+                        executable), args=self._split_convert_args(args), enabled=enabled, check=check))
 
     def _standard_req_parse(self, line, enabled):
         install_instructions = []
@@ -159,7 +171,8 @@ class VenvSettingsHolder:
             package_name, extra_specifier = package_name.split('[')
             extra_specifier = extra_specifier.strip(']')
         if package_name not in self.all_packages and package_name.replace('_', '-') not in self.all_packages:
-            raise KeyError(f'package "{package_name}" is not a valid pypi package')
+            raise KeyError(
+                f'package "{package_name}" is not a valid pypi package')
         return RequirementItem(name=package_name, version_operator=version_operator, version=version, install_instructions=install_instructions, extra_specifier=extra_specifier, enabled=enabled)
 
     def _personal_flit_req_parse(self, line, enabled):
@@ -199,15 +212,18 @@ class VenvSettingsHolder:
         for item in items:
             prefix = '# ' if item.enabled is False else ''
             extra_specifier = f"[{item.extra_specifier}]" if item.extra_specifier != '' else ''
-            install_instructions = ' '.join(item.install_instructions) + ' ' if item.install_instructions != [] else ''
-            _out.append(f"{prefix}{install_instructions}{item.name}{extra_specifier}{item.version_operator}{item.version}".strip())
+            install_instructions = ' '.join(
+                item.install_instructions) + ' ' if item.install_instructions != [] else ''
+            _out.append(
+                f"{prefix}{install_instructions}{item.name}{extra_specifier}{item.version_operator}{item.version}".strip())
         return _out
 
     def _personal_flit_req_write(self, items):
         _out = []
         for item in items:
             prefix = '# ' if item.enabled is False else ''
-            _out.append(f"{prefix}{pathmaker(item.path, rev=True)},{item.name}".strip())
+            _out.append(
+                f"{prefix}{pathmaker(item.path, rev=True)},{item.name}".strip())
         return _out
 
     def _github_url_req_write(self, items):

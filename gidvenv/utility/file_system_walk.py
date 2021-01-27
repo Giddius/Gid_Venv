@@ -12,8 +12,11 @@ import sys
 import shutil
 from typing import Union, Iterable
 
+# * Gid Imports ----------------------------------------------------------------------------------------->
+import gidlogger as glog
 
-# endregion[Imports]
+# endregion [Imports]
+
 
 # region [TODO]
 
@@ -27,7 +30,7 @@ from typing import Union, Iterable
 
 # region [Logging]
 
-
+log = glog.aux_logger(os.getenv('APP_NAME'))
 # endregion[Logging]
 
 # region [Constants]
