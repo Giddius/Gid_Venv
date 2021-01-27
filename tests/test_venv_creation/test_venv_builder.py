@@ -1,5 +1,5 @@
 from gidvenv.venv_creation.venv_builder import GidEnvBuilder
-from gidtools.gidfiles import pathmaker
+from gidvenv.utility.gidfiles_functions import pathmaker
 import os
 import subprocess
 

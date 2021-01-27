@@ -1,6 +1,6 @@
 import pytest
 from tempfile import TemporaryDirectory
-from gidtools.gidfiles import pathmaker
+from gidvenv.utility.gidfiles_functions import pathmaker
 import os
 
 

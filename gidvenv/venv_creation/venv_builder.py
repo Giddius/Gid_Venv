@@ -103,9 +103,9 @@ import toml
 
 import gidlogger as glog
 
-from gidtools.gidfiles import (QuickFile, readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
-                               dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
-from gidtools.gidfiles.file_system_walk import filesystem_walker, filesystem_walker_files, filesystem_walker_folders
+from gidvenv.utility.gidfiles_functions import (readit, clearit, readbin, writeit, loadjson, pickleit, writebin, pathmaker, writejson,
+                                                dir_change, linereadit, get_pickled, ext_splitter, appendwriteit, create_folder, from_dict_to_file)
+from gidvenv.utility.file_system_walk import filesystem_walker, filesystem_walker_files, filesystem_walker_folders
 
 
 # * Local Imports ----------------------------------------------------------------------------------------------------------------------------------------------->
@@ -151,7 +151,8 @@ class GidEnvBuilder(EnvBuilder):
 
     gidvenv_settings_defaults = {'verbose': False,
                                  'manipulate_script': True,
-                                 'extra_install_instructions': []}
+                                 'extra_install_instructions': [],
+                                 "pyclean_before": True}
 
     gidvenv_pyproject_section = {'gidvenv': {'base_venv_settings': base_venv_settings_defaults,
                                              'settings': gidvenv_settings_defaults}}
@@ -162,8 +163,8 @@ class GidEnvBuilder(EnvBuilder):
                   'python-dotenv',
                   'flit']
 
-    def __init__(self, main_dir: Union[str, Path] = 'auto', pyproject_file: Union[str, Path] = None, verbose: bool = False, manipulate_script: bool = True, extra_install_instructions: list = None, **kwargs) -> None:
-
+    def __init__(self, main_dir: Union[str, Path] = 'auto', pyproject_file: Union[str, Path] = None, verbose: bool = False, manipulate_script: bool = True, extra_install_instructions: list = None, pyclean_before: bool = True, **kwargs) -> None:
+        self.pyclean_before = pyclean_before
         self.verbose = verbose
         self.manipulate_script = manipulate_script
         self.extra_install_instructions = extra_install_instructions
@@ -227,10 +228,8 @@ class GidEnvBuilder(EnvBuilder):
             with open(self.error_log_file, 'a') as f:
                 f.write(in_data + '\n')
 
-    @classmethod
-    def _get_main_dir_from_git(cls):
-        cmd = subprocess.run([cls.git_exe, "rev-parse", "--show-toplevel"], capture_output=True, check=True, cwd=os.getcwd(), text=True)
-
+    def _get_main_dir_from_git(self):
+        cmd = subprocess.run([self.git_exe, "rev-parse", "--show-toplevel"], capture_output=True, check=True, cwd=os.getcwd(), text=True)
         main_dir = pathmaker(cmd.stdout).rstrip('\n')
         if os.path.isdir(main_dir) is False:
             raise FileNotFoundError('Unable to locate main_dir')
@@ -344,8 +343,11 @@ class GidEnvBuilder(EnvBuilder):
         self._prepare_folder_files(env_dir)
 
     def create(self, env_dir=None) -> None:
+
         env_dir = self.venv_dir if env_dir is None else env_dir
         self._prepare_folder_files(env_dir)
+        if self.pyclean_before is True:
+            self.run_script(SetupCommandItem(shutil.which('pyclean'), [pathmaker(self.main_dir, rev=True)], True, False))
         for script_item in self.venv_settings_holder.pre_setup_scripts:
             if script_item.enabled is True:
                 self.run_script(script_item)

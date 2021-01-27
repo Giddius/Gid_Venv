@@ -21,3 +21,6 @@ humanize
 commonmark
 colorama
 appdirs
+python-magic-bin
+python-magic
+gidlogger

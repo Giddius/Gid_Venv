@@ -1,16 +1,21 @@
 
-# * Standard Library Imports ---------------------------------------------------------------------------->
+
+# region [Imports]
+
 import os
 import sys
 import shutil
 from pathlib import Path
-from gidtools.gidfiles import pathmaker, writeit, readit, create_folder, loadjson, writejson
+from gidvenv.utility.gidfiles_functions import pathmaker, writeit, readit, create_folder, loadjson, writejson
 from gidvenv.utility.named_tuples import RequirementItem, GithubRequiredItem, PersonalRequiredItem, SetupCommandItem
 from gidvenv.venv_settings.all_pip_packages import AllPackageNames
 from pprint import pprint
 
+# endregion[Imports]
+
 
 class VenvSettingsHolder:
+    # region [ClassAttributes]
 
     user_data_dir = os.getenv("USER_DATA_STORAGE_DIR")
     defaults_file_name = 'defaults.json'
@@ -28,6 +33,10 @@ class VenvSettingsHolder:
                             "required_qt.txt": [],
                             "required_test.txt": ["pytest", "pytest-venv", "pytest-cov", "pytest-click"],
                             "required_experimental.txt": []}
+
+# endregion[ClassAttributes]
+
+# region [Init]
 
     def __init__(self, settings_dir) -> None:
         self.defaults_file = pathmaker(self.user_data_dir, 'defaults.json')
@@ -53,6 +62,8 @@ class VenvSettingsHolder:
                                          "required_qt": {"parsing": self._standard_req_parse, "writing": self._standard_req_write},
                                          "required_test": {"parsing": self._standard_req_parse, "writing": self._standard_req_write},
                                          "required_experimental": {"parsing": self._standard_req_parse, "writing": self._standard_req_write}}
+
+# endregion[Init]
 
     @classmethod
     def add_default(cls, category, value):
@@ -224,6 +235,17 @@ class VenvSettingsHolder:
         if write_cleaned is True:
             self.write_cleaned_settings_file()
 
+# region [SpecialMethods]
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}({self.folder})"
+
+# endregion[SpecialMethods]
+
+# region [Main_Exec]
+
 
 if __name__ == '__main__':
     pass
+
+# endregion [Main_Exec]

@@ -15,11 +15,11 @@ def cli():
 
 @cli.command()
 @click.option('-vn', '--venv-folder-name', default=None)
-@click.option('-m', '--main-dir', default=None)
+@click.option('-m', '--main-dir', default='auto')
 @click.option('-pp', '--pyproject-file', default=None)
 @click.option('--verbose/-not-verbose', '-v/-nv', default=False)
 @click.option('--manipulate-script/--dont-manipulate-script', '-m/-dm', default=True)
-@click.option('-ei', '--extra-install-instructions', nargs=-1)
+@click.option('-ei', '--extra-install-instructions', multiple=True)
 def create(venv_folder_name, main_dir, pyproject_file, verbose, manipulate_script, extra_install_instructions):
     builder = GidEnvBuilder(main_dir=main_dir, pyproject_file=pyproject_file, verbose=verbose, manipulate_script=manipulate_script, extra_install_instructions=list(extra_install_instructions))
     venv_path = pathmaker(builder.main_dir, venv_folder_name) if venv_folder_name is not None else None

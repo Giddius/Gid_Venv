@@ -1,6 +1,6 @@
 from collections import namedtuple
 import subprocess
-from gidtools.gidfiles import pathmaker
+from gidvenv.utility.gidfiles_functions import pathmaker
 from shutil import which
 
 

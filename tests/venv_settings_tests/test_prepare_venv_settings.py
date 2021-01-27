@@ -3,8 +3,7 @@ from gidvenv.utility.named_tuples import SetupCommandItem, RequirementItem, Gith
 import sys
 import os
 import shutil
-from icecream import ic
-from gidtools.gidfiles import pathmaker
+from gidvenv.utility.gidfiles_functions import pathmaker
 
 
 def test_file_creation(empty_venv_settings_folder):

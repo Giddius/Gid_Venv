@@ -1,0 +1,13 @@
+PyQt5
+parceqt
+PyQt5-stubs
+pyqt5-tools
+pyqt5-plugins
+qt5-applications
+pyqtgraph
+pyopengl
+QScintilla
+PyQtWebEngine
+PyQtDataVisualization
+PyQtChart
+PyQt3D

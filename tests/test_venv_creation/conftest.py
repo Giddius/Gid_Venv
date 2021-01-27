@@ -3,7 +3,7 @@ import os
 import sys
 import shutil
 from tempfile import TemporaryDirectory
-from gidtools.gidfiles import writeit, readit, pathmaker
+from gidvenv.utility.gidfiles_functions import writeit, readit, pathmaker
 from textwrap import dedent
 
 FAKE_PYPROJECT = dedent("""[tool.flit.metadata]
