@@ -15,7 +15,9 @@ def test_cleaned_read_line(test_data_dir):
     assert list(x) == ["this is the first line", "this is the second line", "this is the third line after an empty line"]
 
 
-download_file_test_data = [()]
+download_file_test_data = [("https://github.com/Giddius/Gid_Venv/blob/dev/tests/test_data/file_to_download_1.py", "py", 20710),
+                           ("", "txt", 20700),
+                           ("", "zip", 875)]
 
 
 @pytest.mark.parametrize("url, extension, size", download_file_test_data)
