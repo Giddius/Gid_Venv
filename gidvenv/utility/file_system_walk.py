@@ -30,7 +30,7 @@ import gidlogger as glog
 
 # region [Logging]
 
-log = glog.aux_logger(os.getenv('APP_NAME'))
+log = glog.aux_logger(__name__)
 # endregion[Logging]
 
 # region [Constants]

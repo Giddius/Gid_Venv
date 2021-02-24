@@ -22,7 +22,7 @@ import gidlogger as glog
 
 # region [Logging]
 
-log = glog.aux_logger(os.getenv('APP_NAME'))
+log = glog.aux_logger(__name__)
 
 # endregion [Logging]
 
@@ -69,15 +69,14 @@ def hash_to_solidcfg(in_file, in_name=None, in_config_loc='default'):
     _cfg.read(_cfg_loc)
     _hash = hashlib.md5(_bin_file).hexdigest()
     if _cfg.has_section('hashes') is False:
-        log.info(
-            "section ['hashes'] does not exist in solid_config.ini, creating it now!")
+
         _cfg.add_section('hashes')
-        log.info("section ['hashes'] added to solid_config.ini")
+
     _cfg.set('hashes', _name, _hash)
-    log.info(f"added hash [{_hash}] to section ['hashes'] in solid_config.ini")
+
     with open(_cfg_loc, 'w') as configfile:
         _cfg.write(configfile)
-        log.debug("saved new solid_config.ini at '{_cfg_loc}'")
+
     _cfg.read(_cfg_loc)
     if _cfg.get('hashes', _name) != _hash:
         raise configparser.Error(
@@ -97,13 +96,13 @@ def ishash_same(in_file, in_name=None, in_config_loc='default'):
         if _cfg.has_option('hashes', _name):
             if _cfg.get('hashes', _name) != _hash:
                 _out = False
-                log.info("hashes are !NOT! the same")
+
             elif _cfg.get('hashes', _name) == _hash:
                 _out = True
-                log.info("hashes are the same")
+
         else:
             _out = False
-            log.info('missing option')
+
     else:
         log.critical(
             "section ['hashes'] is missing in solid_config.ini, it is absolutely needed")
@@ -247,7 +246,6 @@ def clearit(in_file):
     """
     with open(in_file, 'w') as file_to_clear:
         file_to_clear.write('')
-    log.debug(f"contents of file '{in_file}' was cleared")
 
 
 # endregion [Functions_Write]
@@ -316,10 +314,9 @@ def work_in(in_dir):
     """
     prev_cwd = os.getcwd()
     os.chdir(in_dir)
-    log.debug(f"starting to work in directory [{in_dir}]")
+
     yield
-    log.debug(
-        f"stopped to work in directory [{in_dir}] and returned to directory [{prev_cwd}]")
+
     os.chdir(prev_cwd)
 
 
@@ -344,8 +341,7 @@ def path_part_remove(in_file):
     _useless = _path.pop(-1)
     _first = _path.pop(0) + '/'
     _out = pathmaker(_first, *_path)
-    log.debug(
-        f"path segment [{_useless}] was removed from path [{_file}] to get [{_out}]")
+
     return _out
 
 
@@ -365,7 +361,6 @@ def dir_change(*args, in_adress_home=False, ):
     else:
         _path_to_home = pathmaker(*args)
     os.chdir(_path_to_home)
-    log.debug('We are now in ' + _path_to_home)
 
 
 # -------------------------------------------------------------- get_absolute_path -------------------------------------------------------------- #
@@ -427,7 +422,7 @@ def file_name_time(var_sep='_', date_time_sep='-', box=('[', ']')):
         _output = box[0] + today_date + date_time_sep + today_time + box[1]
     else:
         _output = today_date + date_time_sep + today_time
-    log.debug(f"created file name [{_output}]")
+
     return _output
 
 
@@ -449,10 +444,9 @@ def number_rename(in_file_name, in_round=1):
     """
     _temp_path = in_file_name
     _temp_path = _temp_path.split('.')
-    log.debug(
-        f" Parts of rename: [0] = {_temp_path[0]}, [1] = {_temp_path[1]}")
+
     _output = _temp_path[0] + str(in_round) + '.' + _temp_path[1]
-    log.debug(f"Setting name to {_output}")
+
     _new_round = int(in_round) + 1
     return _exist_handle(_output, _new_round, _temp_path[0] + '.' + _temp_path[1])
 
@@ -497,15 +491,11 @@ def _exist_handle(in_path, in_round, original_path):
     internal use for the "number_rename" function.
     """
     if os.path.exists(in_path) is True:
-        log.debug(f"{in_path} already exists")
+
         _new_path = number_rename(original_path, in_round)
-        log.debug(
-            f" variables for rename round {in_round} are: original_path = {original_path}, in_round = {in_round}")
+
     else:
         _new_path = in_path
-        log.debug(
-            f'{_new_path} does not exist, setting it to f"{in_path} does not exist, setting it to {_new_path}"'
-        )
 
     return _new_path
 
@@ -542,14 +532,13 @@ def timenamemaker(in_full_path):
         the new file name
     """
     _time = str(datetime.datetime.now()).rsplit('.', maxsplit=1)[0]
-    log.debug(f"_time is [{_time}]")
+
     _file = splitoff(in_full_path)[1]
     _file_tup = os.path.splitext(_file)
     _new_file_name = _file_tup[0] + _time + _file_tup[1]
     _path = splitoff(in_full_path)[0]
     _out = pathmaker(_path, _new_file_name)
-    log.debug(
-        f"created file name [{_out}] from original name [{in_full_path}]")
+
     return _out
 
 
@@ -638,7 +627,7 @@ def file_name_modifier(in_path, in_string, pos='prefix', new_ext=None, seperator
         _outfile = in_string + seperator + _file + '.' + \
             _ext if pos == 'prefix' else _file + seperator + in_string + '.' + _ext
     _out = pathmaker(_path, _outfile)
-    log.debug(f"created file name [{_out}] from original name [{in_path}]")
+
     return _out
 
 
@@ -662,7 +651,7 @@ def pickleit(obj, in_path):
         the path to the directory to use
     """
     with open(pathmaker(in_path), 'wb') as filetopickle:
-        log.debug(f"saved object [{str(obj)}] as pickle file [{in_path}]")
+
         pickle.dump(obj, filetopickle, pickle.HIGHEST_PROTOCOL)
 
 
@@ -681,7 +670,7 @@ def get_pickled(in_path):
         the pickled object
     """
     with open(pathmaker(in_path), 'rb') as pickletoretrieve:
-        log.debug(f"loaded pickle file [{in_path}]")
+
         return pickle.load(pickletoretrieve)
 
 # endregion [Functions_Pickle]
@@ -706,14 +695,14 @@ def file_walker(in_path, in_with_folders=False):
         a list of all files found as file paths.
     """
     _out_list = []
-    log.debug(f"start to walk and find all files in [{in_path}]")
+
     for root, _, filelist in os.walk(in_path):
         for files in filelist:
             _out = os.path.join(root, files)
             _out_list.append(_out)
         if in_with_folders is True and root != in_path:
             _out_list.append(root)
-    log.debug(f"finished walking [{in_path}]")
+
     return _out_list
 
 # endregion [Functions_Search]
@@ -740,36 +729,28 @@ def limit_amount_of_files(in_basename, in_directory, in_amount_max):
     in_amount_max : int
         the max amount of files allowed
     """
-    log.debug(
-        f"checking amount of files with name [{in_basename}] in [{in_directory}], if more than [{in_amount_max}]")
+
     _existing_file_list = []
     for files in os.listdir(pathmaker(in_directory)):
         if in_basename in files:
             _existing_file_list.append(pathmaker(in_directory, files))
     if len(_existing_file_list) > in_amount_max:
-        log.debug(
-            f"files are exceding max amount by [{len(_existing_file_list)-in_amount_max}]")
+
         _existing_file_list.sort(key=os.path.getmtime)
         for index, files in enumerate(_existing_file_list):
             _rename_index = index - 1
             if index == 0:
                 os.remove(files)
-                log.debug(f"removing oldest file [{files}]")
+
             elif index > in_amount_max:
                 break
             else:
                 os.rename(files, _existing_file_list[_rename_index])
-                log.debug(
-                    f"renaming file [{files}] to [{_existing_file_list[_rename_index]}]")
 
 
 def create_folder(in_path):
     if os.path.isdir(in_path) is False:
-        log.error(f"Folder '{in_path}' does **NOT** exist!")
         os.makedirs(in_path)
-        log.info("Created Folder '{in_path}'")
-    else:
-        log.info(f"Folder '{in_path}' does exist!")
 
 
 def to_attr_name(in_name):

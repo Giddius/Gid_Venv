@@ -1,5 +1,4 @@
 PyQt5
-parceqt
 PyQt5-stubs
 pyqt5-tools
 pyqt5-plugins
